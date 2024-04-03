@@ -23,6 +23,8 @@ from transformers import AutoModelForCausalLM
 from deepseek_vl.models import MultiModalityCausalLM, VLChatProcessor
 from deepseek_vl.utils.io import load_pil_images
 
+import copy
+
 dtype = torch.bfloat16
 device_cpu = "cpu"
 device_accelerator = "cuda"
@@ -40,8 +42,11 @@ vl_gpt: MultiModalityCausalLM = AutoModelForCausalLM.from_pretrained(
 vl_gpt = vl_gpt.to(dtype)
 
 # to compare result on cpu and accelerator
-vl_gpu_cpu = vl_gpt.eval()
-vl_gpt_acclerator = vl_gpt.to(device_accelerator).eval()
+vl_gpt_cpu = copy.deepcopy(vl_gpt).eval()
+vl_gpt_accelerator = vl_gpt.to(device_accelerator).eval()
+
+print(vl_gpt_cpu.device)
+print(vl_gpt_accelerator.device)
 
 conversation = [
     {
@@ -60,13 +65,13 @@ prepare_inputs_cpu = vl_chat_processor(
 )
 
 
-prepare_inputs_accelerator = prepare_inputs_cpu.to(vl_gpt.device)
+prepare_inputs_accelerator = prepare_inputs_cpu.to(device_accelerator)
 
 # run image encoder to get the image embeddings
 inputs_embeds_cpu = vl_gpt_cpu.prepare_inputs_embeds(**prepare_inputs_cpu)
 inputs_embeds_accelerator = vl_gpt_accelerator.prepare_inputs_embeds(**prepare_inputs_accelerator)
 
-print("check equallness of embedding between cpu and accelerator: ", torch.allclose(inputs_embeds_cpu, inputs_embeds_accelerator.to("cpu")))
+print("check equallness of embedding between cpu and accelerator: ", torch.allclose(inputs_embeds_cpu, inputs_embeds_accelerator.cpu()))
 
 # run the model to get the response
 outputs_cpu = vl_gpt_cpu.language_model.generate(
