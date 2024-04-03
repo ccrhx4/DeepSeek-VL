@@ -83,7 +83,7 @@ def generate(device, dtype, conversation):
     return inputs_embeds, outputs_accelerator
 
 embeds_cpu, output_cpu = generate(device_cpu, dtype, conversation)
-embeds_gpu, output_gpu = generate(device_accelerator, dtype, conversation)
+embeds_gpu, output_gpu = generate(device_hpu, dtype, conversation)
 
 torch.testing.assert_close(embeds_gpu.cpu(), embeds_cpu)
 print("check equallness of outputs between cpu and accelerator: ", torch.allclose(embeds_cpu, embeds_gpu.cpu()))
