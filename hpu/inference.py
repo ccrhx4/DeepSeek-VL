@@ -28,25 +28,7 @@ import copy
 dtype = torch.bfloat16
 device_cpu = "cpu"
 device_accelerator = "cuda"
-
-
-# specify the path to the model
-model_path = "deepseek-ai/deepseek-vl-7b-chat"
-vl_chat_processor: VLChatProcessor = VLChatProcessor.from_pretrained(model_path)
-tokenizer = vl_chat_processor.tokenizer
-
-vl_gpt: MultiModalityCausalLM = AutoModelForCausalLM.from_pretrained(
-    model_path, trust_remote_code=True
-)
-
-vl_gpt = vl_gpt.to(dtype)
-
-# to compare result on cpu and accelerator
-vl_gpt_cpu = copy.deepcopy(vl_gpt).eval()
-vl_gpt_accelerator = vl_gpt.to(device_accelerator).eval()
-
-print(vl_gpt_cpu.device)
-print(vl_gpt_accelerator.device)
+device_hpu = "hpu"
 
 conversation = [
     {
@@ -55,49 +37,53 @@ conversation = [
         "images": ["../images/training_pipelines.jpg"],
     },
     {"role": "Assistant", "content": ""},
-]
+    ]
 
+def generate(device, dtype, conversation):
+    # specify the path to the model
+    model_path = "deepseek-ai/deepseek-vl-7b-chat"
+    vl_chat_processor: VLChatProcessor = VLChatProcessor.from_pretrained(model_path)
+    tokenizer = vl_chat_processor.tokenizer
 
-# load images and prepare for inputs
-pil_images = load_pil_images(conversation)
-prepare_inputs_cpu = vl_chat_processor(
-    conversations=conversation, images=pil_images, force_batchify=True
-)
+    if device == "hpu":
+        import habana_frameworks.torch.core as htcore
 
+    vl_gpt: MultiModalityCausalLM = AutoModelForCausalLM.from_pretrained(
+        model_path, trust_remote_code=True
+    )
 
-prepare_inputs_accelerator = prepare_inputs_cpu.to(device_accelerator)
+    vl_gpt = vl_gpt.to(device, dtype=dtype).eval()
 
-# run image encoder to get the image embeddings
-inputs_embeds_cpu = vl_gpt_cpu.prepare_inputs_embeds(**prepare_inputs_cpu)
-inputs_embeds_accelerator = vl_gpt_accelerator.prepare_inputs_embeds(**prepare_inputs_accelerator)
+    # load images and prepare for inputs
+    pil_images = load_pil_images(conversation)
+    prepare_inputs = vl_chat_processor(
+        conversations=conversation, images=pil_images, force_batchify=True
+    ).to(device)
 
-print("check equallness of embedding between cpu and accelerator: ", torch.allclose(inputs_embeds_cpu, inputs_embeds_accelerator.cpu()))
+    # run image encoder to get the image embeddings
+    inputs_embeds = vl_gpt.prepare_inputs_embeds(**prepare_inputs)
 
-# run the model to get the response
-outputs_cpu = vl_gpt_cpu.language_model.generate(
-    inputs_embeds=inputs_embeds_cpu,
-    attention_mask=prepare_inputs_cpu.attention_mask,
-    pad_token_id=tokenizer.eos_token_id,
-    bos_token_id=tokenizer.bos_token_id,
-    eos_token_id=tokenizer.eos_token_id,
-    max_new_tokens=512,
-    do_sample=False,
-    use_cache=True,
-)
+    # run the model to get the response
+    outputs_accelerator = vl_gpt.language_model.generate(
+        inputs_embeds=inputs_embeds,
+        attention_mask=prepare_inputs.attention_mask,
+        pad_token_id=tokenizer.eos_token_id,
+        bos_token_id=tokenizer.bos_token_id,
+        eos_token_id=tokenizer.eos_token_id,
+        max_new_tokens=512,
+        do_sample=False,
+        use_cache=True,
+    )
 
-# run the model to get the response
-outputs_accelerator = vl_gpt_accelerator.language_model.generate(
-    inputs_embeds=inputs_embeds_accelerator,
-    attention_mask=prepare_inputs_accelerator.attention_mask,
-    pad_token_id=tokenizer.eos_token_id,
-    bos_token_id=tokenizer.bos_token_id,
-    eos_token_id=tokenizer.eos_token_id,
-    max_new_tokens=512,
-    do_sample=False,
-    use_cache=True,
-)
+    if device == "hpu":
+        htcore.mark_step()
 
-print("check equallness of outputs between cpu and accelerator: ", torch.allclose(outputs_cpu, outputs_accelerator.to("cpu")))
+    answer = tokenizer.decode(outputs_accelerator[0].cpu().tolist(), skip_special_tokens=True)
+    print(f"{prepare_inputs['sft_format'][0]}", answer)
+    return inputs_embeds, outputs_accelerator
 
-answer = tokenizer.decode(outputs_accelerator[0].cpu().tolist(), skip_special_tokens=True)
-print(f"{prepare_inputs['sft_format'][0]}", answer)
+embeds_cpu, output_cpu = generate(device_cpu, dtype, conversation)
+embeds_gpu, output_gpu = generate(device_accelerator, dtype, conversation)
+
+torch.testing.assert_close(embeds_gpu.cpu(), embeds_cpu)
+print("check equallness of outputs between cpu and accelerator: ", torch.allclose(embeds_cpu, embeds_gpu.cpu()))
