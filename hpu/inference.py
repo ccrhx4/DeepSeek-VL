@@ -16,14 +16,16 @@
 # COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
+import habana_frameworks.torch
 import torch
 from transformers import AutoModelForCausalLM
 
 from deepseek_vl.models import MultiModalityCausalLM, VLChatProcessor
 from deepseek_vl.utils.io import load_pil_images
 
-import copy
+from optimum.habana.transformers.modeling_utils import adapt_transformers_to_gaudi
+
+adapt_transformers_to_gaudi()
 
 dtype = torch.bfloat16
 device_cpu = "cpu"
@@ -63,6 +65,8 @@ def generate(device, dtype, conversation):
     # run image encoder to get the image embeddings
     inputs_embeds = vl_gpt.prepare_inputs_embeds(**prepare_inputs)
 
+    generation_kwargs = dict(do_sample=False, num_beams=4, use_cache=True, max_new_tokens=512, static_shapes=False)
+
     # run the model to get the response
     outputs_accelerator = vl_gpt.language_model.generate(
         inputs_embeds=inputs_embeds,
@@ -70,9 +74,7 @@ def generate(device, dtype, conversation):
         pad_token_id=tokenizer.eos_token_id,
         bos_token_id=tokenizer.bos_token_id,
         eos_token_id=tokenizer.eos_token_id,
-        max_new_tokens=512,
-        do_sample=False,
-        use_cache=True,
+        **generation_kwargs
     )
 
     if device == "hpu":
@@ -82,7 +84,7 @@ def generate(device, dtype, conversation):
     print(f"{prepare_inputs['sft_format'][0]}", answer)
     return inputs_embeds, outputs_accelerator
 
-embeds_cpu, output_cpu = generate(device_cpu, dtype, conversation)
+#embeds_cpu, output_cpu = generate(device_cpu, dtype, conversation)
 embeds_gpu, output_gpu = generate(device_hpu, dtype, conversation)
 
 torch.testing.assert_close(embeds_gpu.cpu(), embeds_cpu)
