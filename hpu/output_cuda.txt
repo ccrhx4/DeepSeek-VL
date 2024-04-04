@@ -1,0 +1,18 @@
+You are a helpful language and vision assistant. You are able to understand the visual content that the user provides, and assist the user with a variety of tasks using natural language.
+
+User: <image_placeholder>Describe each stage of this image.
+
+Assistant: The image depicts a three-stage process for training a vision-language model, as indicated by the labels at the top of each stage.
+
+Stage 1: Training VL Adapter
+In this stage, a DeepSeek LLM is shown with a Vision-Language Adapter attached to it. The image shows a hybrid vision-language model, which is a type of model that combines visual and textual data. The hybrid model is designed to understand and process both visual and textual information, which is essential for tasks like image captioning or visual question answering.
+
+Stage 2: Joint VL Pre-training
+This stage involves the same DeepSeek LLM as before, but now it is accompanied by a Vision-Language Encoder and a Vision-Language Decoder. The presence of these components suggests that the model is being trained to understand and generate both visual and textual data. The encoder likely takes in visual data and the decoder processes textual data, with the goal of improving the model's ability to understand and generate both types of information.
+
+Stage 3: Supervised Fine-tuning
+In this final stage, the model is shown to be a DeepSeek LLM with a Vision-Language Encoder and a Vision-Language Decoder. The model is now being fine-tuned using supervised learning, which means it is being trained on a specific task or set of tasks. The presence of the word "Supervised" indicates that the model is being guided by labeled data, which is a common approach in supervised learning.
+
+The image also includes a comparison of the model's components across the three stages. In Stage 1, the model has a single Vision-Language Adapter. In Stage 2, the model has a Vision-Language Encoder and a Vision-Language Decoder, suggesting an expansion of the model's capabilities. In Stage 3, the model has both the Vision-Language Encoder and the Vision-Language Decoder, reinforcing the idea that the model is being fine-tuned for a specific task.
+
+The visual clues in the image, such as the labels and the components of the model, support the description of each stage and the progression from a simpler model in Stage 1 to a more complex model in Stage 3.

@@ -59,7 +59,7 @@ outputs = vl_gpt.language_model.generate(
     pad_token_id=tokenizer.eos_token_id,
     bos_token_id=tokenizer.bos_token_id,
     eos_token_id=tokenizer.eos_token_id,
-    max_new_tokens=512,
+    max_new_tokens=16,
     do_sample=False,
     use_cache=True,
 )
