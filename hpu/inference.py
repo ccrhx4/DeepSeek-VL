@@ -65,7 +65,7 @@ def generate(device, dtype, conversation):
     # run image encoder to get the image embeddings
     inputs_embeds = vl_gpt.prepare_inputs_embeds(**prepare_inputs)
 
-    generation_kwargs = dict(do_sample=False, num_beams=4, use_cache=True, max_new_tokens=512, static_shapes=False)
+    generation_kwargs = dict(do_sample=False, num_beams=4, use_cache=True, max_new_tokens=16)
 
     # run the model to get the response
     outputs_accelerator = vl_gpt.language_model.generate(
