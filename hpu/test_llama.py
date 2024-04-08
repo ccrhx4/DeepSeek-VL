@@ -1,7 +1,11 @@
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from optimum.habana.transformers.modeling_utils import adapt_transformers_to_gaudi
 
-adapt_transformers_to_gaudi()
+
+device = "cuda"
+
+if device == "hpu":
+    from optimum.habana.transformers.modeling_utils import adapt_transformers_to_gaudi
+    adapt_transformers_to_gaudi()
 
 model = AutoModelForCausalLM.from_pretrained("huggyllama/llama-7b")
 tokenizer = AutoTokenizer.from_pretrained("huggyllama/llama-7b")
@@ -9,8 +13,9 @@ tokenizer = AutoTokenizer.from_pretrained("huggyllama/llama-7b")
 text = "this is a reproducer of the issue that happend in my work"
 input_ids = tokenizer.encode(text, return_tensors="pt")
 
-model = model.to("hpu")
-input_ids = input_ids.to("hpu")
+model = model.to(device)
+input_ids = input_ids.to(device)
+
 # Traditional way of generating text
 outputs = model.generate(input_ids).cpu()
 print("\ngenerate + input_ids:", tokenizer.decode(outputs[0], skip_special_tokens=True))
