@@ -18,19 +18,26 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 import habana_frameworks.torch
 import torch
-from transformers import AutoModelForCausalLM
 
+dtype = torch.bfloat16
+device = "hpu"
+use_hpu_graphs = True
+max_new_tokens = 32
+
+if device == "hpu":
+    from optimum.habana.transformers.modeling_utils import adapt_transformers_to_gaudi
+    adapt_transformers_to_gaudi()
+
+generate_kwargs = {
+        "lazy_mode": True,
+        "hpu_graphs": use_hpu_graphs,
+        "max_new_tokens": max_new_tokens,
+}
+
+from transformers import AutoModelForCausalLM
 from deepseek_vl.models import MultiModalityCausalLM, VLChatProcessor
 from deepseek_vl.utils.io import load_pil_images
 
-from optimum.habana.transformers.modeling_utils import adapt_transformers_to_gaudi
-
-adapt_transformers_to_gaudi()
-
-dtype = torch.bfloat16
-device_cpu = "cpu"
-device_accelerator = "cuda"
-device_hpu = "hpu"
 
 conversation = [
     {
@@ -54,6 +61,10 @@ def generate(device, dtype, conversation):
         model_path, trust_remote_code=True
     )
 
+    if use_hpu_graphs:
+        from habana_frameworks.torch.hpu import wrap_in_hpu_graph
+        vl_gpt.language_model = wrap_in_hpu_graph(vl_gpt.language_model)
+
     vl_gpt = vl_gpt.to(device, dtype=dtype).eval()
 
     # load images and prepare for inputs
@@ -64,8 +75,14 @@ def generate(device, dtype, conversation):
 
     # run image encoder to get the image embeddings
     inputs_embeds = vl_gpt.prepare_inputs_embeds(**prepare_inputs)
-
-    generation_kwargs = dict(do_sample=False, num_beams=4, use_cache=True, max_new_tokens=16)
+    print("run generation")
+    generation_kwargs = dict(do_sample=False, 
+            #num_beams=4, 
+            #use_cache=True, 
+            max_new_tokens=max_new_tokens,
+            lazy_mode=True,
+            hpu_graphs=use_hpu_graphs,
+    )
 
     # run the model to get the response
     outputs_accelerator = vl_gpt.language_model.generate(
@@ -74,18 +91,12 @@ def generate(device, dtype, conversation):
         pad_token_id=tokenizer.eos_token_id,
         bos_token_id=tokenizer.bos_token_id,
         eos_token_id=tokenizer.eos_token_id,
-        **generation_kwargs
+        #max_new_tokens=16,
+        **generation_kwargs,
     )
-
-    if device == "hpu":
-        htcore.mark_step()
 
     answer = tokenizer.decode(outputs_accelerator[0].cpu().tolist(), skip_special_tokens=True)
     print(f"{prepare_inputs['sft_format'][0]}", answer)
     return inputs_embeds, outputs_accelerator
 
-#embeds_cpu, output_cpu = generate(device_cpu, dtype, conversation)
-embeds_gpu, output_gpu = generate(device_hpu, dtype, conversation)
-
-torch.testing.assert_close(embeds_gpu.cpu(), embeds_cpu)
-print("check equallness of outputs between cpu and accelerator: ", torch.allclose(embeds_cpu, embeds_gpu.cpu()))
+embeds_gpu, output_gpu = generate(device, dtype, conversation)
