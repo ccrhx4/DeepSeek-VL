@@ -1,0 +1,4 @@
+[submodule "hpu/submodule/ccrhx4.optimum-habana"]
+	path = hpu/submodule/ccrhx4.optimum-habana
+	url = https://github.com/ccrhx4/ccrhx4.optimum-habana
+	branch = fix_input_embeds
