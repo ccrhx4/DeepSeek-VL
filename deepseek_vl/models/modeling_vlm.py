@@ -161,7 +161,7 @@ class MultiModalityCausalLM(MultiModalityPreTrainedModel):
         # replace with the image embeddings
         inputs_embeds[images_seq_mask] = images_embeds[images_emb_mask]
 
-        return inputs_embeds, input_ids
+        return inputs_embeds
 
 
 AutoConfig.register("vision", VisionConfig)
