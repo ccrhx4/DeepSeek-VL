@@ -3,7 +3,8 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 device = "hpu"
 use_hpu_graphs = True
-max_new_tokens = 32
+max_new_tokens = 16
+num_beams = 1
 
 if device == "hpu":
     from optimum.habana.transformers.modeling_utils import adapt_transformers_to_gaudi
@@ -15,18 +16,21 @@ tokenizer = AutoTokenizer.from_pretrained("huggyllama/llama-7b")
 text = "this is a reproducer of the issue that happend in my workplace."
 input_ids = tokenizer.encode(text, return_tensors="pt")
 
-generate_kwargs = {"max_new_tokens": max_new_tokens,}
+generate_kwargs = {
+        "max_new_tokens": max_new_tokens,
+        "num_beams": num_beams,
+        }
 
 if device == "hpu" and use_hpu_graphs == True:
     from habana_frameworks.torch.hpu import wrap_in_hpu_graph
     model = wrap_in_hpu_graph(model)
     
-    generate_kwargs = {
+    generate_kwargs.update({
         "lazy_mode": True,
         "hpu_graphs": use_hpu_graphs,
-        "max_new_tokens": max_new_tokens,
-    }
+    })
 
+print(generate_kwargs)
 model = model.to(device)
 input_ids = input_ids.to(device)
 
