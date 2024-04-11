@@ -23,6 +23,9 @@ from transformers import AutoModelForCausalLM
 from deepseek_vl.models import MultiModalityCausalLM, VLChatProcessor
 from deepseek_vl.utils.io import load_pil_images
 
+num_beams = 1
+max_new_tokens = 512
+
 # specify the path to the model
 model_path = "deepseek-ai/deepseek-vl-7b-chat"
 vl_chat_processor: VLChatProcessor = VLChatProcessor.from_pretrained(model_path)
@@ -59,9 +62,10 @@ outputs = vl_gpt.language_model.generate(
     pad_token_id=tokenizer.eos_token_id,
     bos_token_id=tokenizer.bos_token_id,
     eos_token_id=tokenizer.eos_token_id,
-    max_new_tokens=512,
+    max_new_tokens=max_new_tokens,
     do_sample=False,
     use_cache=True,
+    num_beams=num_beams,
 )
 
 answer = tokenizer.decode(outputs[0].cpu().tolist(), skip_special_tokens=True)

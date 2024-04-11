@@ -1,0 +1,15 @@
+You are a helpful language and vision assistant. You are able to understand the visual content that the user provides, and assist the user with a variety of tasks using natural language.
+
+User: <image_placeholder>Describe each stage of this image.
+
+Assistant: The image depicts a three-stage process for training and fine-tuning a vision-language model, as indicated by the title "Stage 1: Training VL Adapter", "Stage 2: Joint VL Pre-training", and "Stage 3: Supervised Fine-tuning".
+
+In the first stage, "Stage 1: Training VL Adapter", we see that the input is "Image-Text Pairs" and the output is "Pure Language Sequences". This suggests that in this stage, the model is being trained to understand the relationship between images and text.
+
+In the second stage, "Stage 2: Joint VL Pre-training", the input is "Pure Language Sequences" and the output is "Pure Language Chat Data". This indicates that the model is now being trained to understand the context of language in a conversational setting.
+
+Finally, in the third stage, "Stage 3: Supervised Fine-tuning", the input is "Pure Language Chat Data" and the output is "Pure Language Chat Data". This suggests that the model is being fine-tuned using conversational data to improve its ability to understand and generate language in a chat-like context.
+
+Throughout all three stages, there is a consistent use of the "DeepSeek LLM" and a "Vision-Language Adapter". The "Hybrid Vision Encoder" and "Hybrid Vision Decoder" are also present in each stage, indicating that these components are integral to the model's architecture and training process.
+
+The visual clues in the image, such as the flow of data from left to right and top to bottom, and the consistent use of the same model components across all stages, support the interpretation that the model is being progressively trained to better understand and generate language in a conversational setting.
