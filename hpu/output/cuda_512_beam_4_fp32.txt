@@ -1,0 +1,23 @@
+Python version is above 3.10, patching the collections module.
+You are a helpful language and vision assistant. You are able to understand the visual content that the user provides, and assist the user with a variety of tasks using natural language.
+
+User: <image_placeholder>Describe each stage of this image.
+
+Assistant: The image depicts a three-stage process for training and fine-tuning a vision-language model, as indicated by the labels at the top of each stage.
+
+Stage 1: Training VL Adapter
+In this stage, a DeepSeek LLM (Large Language Model) is used to train a vision-language adapter. The visual clue supporting this is the presence of the "DeepSeek LLM" label and the "Vision-Language Adapter" box, which suggests that the model is being adapted to understand and process visual information.
+
+Stage 2: Joint VL Pre-training
+In this stage, the vision-language adapter from the previous stage is used in conjunction with the "DeepSeek LLM" for joint pre-training. The "Vision-Language Adapter" box and the "DeepSeek LLM" label indicate that the model is being further trained to enhance its vision-language understanding capabilities.
+
+Stage 3: Supervised Fine-tuning
+In this final stage, the model is fine-tuned using "Supervised Fine-tuning." The "Supervised Fine-tuning" box and the "DeepSeek LLM" label suggest that the model is now being trained on a supervised dataset to improve its performance on specific tasks or to adapt to new domains.
+
+Throughout all three stages, the "Hybrid Vision Encoder" and "Hybrid Vision Decoder" boxes are present, indicating that these components are integral to the model's vision-language processing capabilities.
+
+At the bottom of the image, there is a mention of "Image-Text Pairs" and "Pure Language Sequences," suggesting that the model is trained on a variety of data types, including image-text pairs and pure language sequences, to improve its understanding and generation of both visual and linguistic information.
+
+Additionally, there is a mention of "Pure Language Chat Data" at the bottom right, which implies that the model may also be trained on conversational data to improve its ability to understand and generate human language in a chat-like context.
+
+The color coding of the stages, with Stage 1 in blue, Stage 2 in orange, and Stage 3 in brown, provides a visual distinction between the different stages of the model's training and fine-tuning process.

@@ -1,0 +1,17 @@
+Python version is above 3.10, patching the collections module.
+You are a helpful language and vision assistant. You are able to understand the visual content that the user provides, and assist the user with a variety of tasks using natural language.
+
+User: <image_placeholder>Describe each stage of this image.
+
+Assistant: The image depicts a three-stage process for training a vision-language model, as indicated by the labels at the top of each stage.
+
+Stage 1: Training VL Adapter
+In this stage, a DeepSeek LLM is shown with a Vision-Language Adapter attached to it. The adapter is designed to take image-text pairs as input and output pure language sequences. This suggests that the model is being trained to understand and generate text based on visual information.
+
+Stage 2: Joint VL Pre-training
+This stage shows a similar setup to Stage 1, with a DeepSeek LLM and a Vision-Language Adapter. However, the key difference here is that the model is being pre-trained jointly, which implies that the model is being trained to perform both vision and language tasks simultaneously.
+
+Stage 3: Supervised Fine-tuning
+In this final stage, the model has been pre-trained and is now being fine-tuned using supervised learning. The DeepSeek LLM is shown with a Hybrid Vision Encoder and a Hybrid Vision Decoder, which suggests that the model is being trained to process and generate visual information in a more refined manner.
+
+The visual clues that support these descriptions are the labels and the structure of the model components. Each stage shows a DeepSeek LLM with a Vision-Language Adapter, indicating that the model is being developed to handle both vision and language tasks. The presence of the Hybrid Vision Encoder and Decoder in Stage 3 suggests that the model is being fine-tuned to process visual information more effectively. The image-text pairs in Stage 1 and the pure language sequences in Stage 2 and 3 indicate that the model is being trained to understand and generate text based on visual information.
