@@ -19,19 +19,22 @@
 import habana_frameworks.torch
 import torch
 
-dtype = torch.bfloat16
+dtype = torch.float32
 device = "hpu"
 use_hpu_graphs = True
-max_new_tokens = 32
+max_new_tokens = 512
+num_beams = 1
+ignore_eos = False
 
 if device == "hpu":
     from optimum.habana.transformers.modeling_utils import adapt_transformers_to_gaudi
     adapt_transformers_to_gaudi()
 
-generate_kwargs = {
+generation_kwargs = {
         "lazy_mode": True,
         "hpu_graphs": use_hpu_graphs,
         "max_new_tokens": max_new_tokens,
+        "num_beams": num_beams,
 }
 
 from transformers import AutoModelForCausalLM
@@ -71,18 +74,11 @@ def generate(device, dtype, conversation):
     pil_images = load_pil_images(conversation)
     prepare_inputs = vl_chat_processor(
         conversations=conversation, images=pil_images, force_batchify=True
-    ).to(device)
+    ).to(device, dtype=dtype)
 
     # run image encoder to get the image embeddings
     inputs_embeds = vl_gpt.prepare_inputs_embeds(**prepare_inputs)
-    print("run generation")
-    generation_kwargs = dict(do_sample=False, 
-            #num_beams=4, 
-            #use_cache=True, 
-            max_new_tokens=max_new_tokens,
-            lazy_mode=True,
-            hpu_graphs=use_hpu_graphs,
-    )
+    print("run generation", generation_kwargs)
 
     # run the model to get the response
     outputs_accelerator = vl_gpt.language_model.generate(
@@ -91,10 +87,10 @@ def generate(device, dtype, conversation):
         pad_token_id=tokenizer.eos_token_id,
         bos_token_id=tokenizer.bos_token_id,
         eos_token_id=tokenizer.eos_token_id,
-        #max_new_tokens=16,
         **generation_kwargs,
     )
 
+    
     answer = tokenizer.decode(outputs_accelerator[0].cpu().tolist(), skip_special_tokens=True)
     print(f"{prepare_inputs['sft_format'][0]}", answer)
     return inputs_embeds, outputs_accelerator
