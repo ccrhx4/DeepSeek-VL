@@ -1,0 +1,19 @@
+Python version is above 3.10, patching the collections module.
+run generation {'max_new_tokens': 512, 'num_beams': 1, 'lazy_mode': True, 'hpu_graphs': True, 'ignore_eos': False}
+hpu:0
+You are a helpful language and vision assistant. You are able to understand the visual content that the user provides, and assist the user with a variety of tasks using natural language.
+
+User: <image_placeholder>Describe each stage of this image.
+
+Assistant: The image depicts a three-stage process for training a vision-language model, as indicated by the labels at the top of each stage.
+
+Stage 1: Training VL Adapter
+In this stage, a DeepSeek LLM is shown with a Vision-Language Adapter attached to it. The adapter is connected to a Vision Encoder and a Language Decoder, which are indicated by the arrows. The Vision Encoder is responsible for encoding visual information, and the Language Decoder is responsible for decoding language information. The image also shows a Hybrid Vision Encoder and a Hybrid Vision Decoder, suggesting that the model is designed to handle both image and text data.
+
+Stage 2: Joint VL Pre-training
+This stage involves the same DeepSeek LLM as in the first stage, but with a different setup. The Vision-Language Adapter is now connected to a Vision-Language Encoder and a Vision-Language Decoder. The Vision-Language Encoder is responsible for encoding both visual and language information, and the Vision-Language Decoder is responsible for decoding this combined information. The image shows a Hybrid Vision-Language Encoder and a Hybrid Vision-Language Decoder, indicating that the model is designed to handle both visual and linguistic data jointly.
+
+Stage 3: Supervised Fine-tuning
+In this final stage, the DeepSeek LLM is shown with a Supervised Vision-Language Encoder and a Supervised Vision-Language Decoder. The Supervised Vision-Language Encoder is responsible for encoding visual and language information, and the Supervised Vision-Language Decoder is responsible for decoding this information. The image shows a Hybrid Supervised Vision-Language Encoder and a Hybrid Supervised Vision-Language Decoder, suggesting that the model is designed to handle both visual and linguistic data with supervision.
+
+Throughout all stages, the model is trained on a combination of image-text pairs and pure language sequences, as indicated by the labels at the bottom of the image. The image-text pairs are used for the first two stages, while the pure language sequences are used for the third stage. The model is trained to understand and generate both visual and linguistic information, as evidenced by the various encoders and decoders connected to the DeepSeek LLM.
