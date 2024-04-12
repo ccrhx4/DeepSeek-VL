@@ -19,24 +19,28 @@
 import habana_frameworks.torch
 import torch
 
-dtype = torch.float
+dtype = torch.bfloat16
 device = "hpu"
 use_hpu_graphs = True
 max_new_tokens = 512
 num_beams = 1
 ignore_eos = False
 
+
+generation_kwargs = {
+    "max_new_tokens": max_new_tokens,
+    "num_beams": num_beams,
+}
+
 if device == "hpu":
     from optimum.habana.transformers.modeling_utils import adapt_transformers_to_gaudi
     adapt_transformers_to_gaudi()
 
-generation_kwargs = {
+    generation_kwargs.update({
         "lazy_mode": True,
         "hpu_graphs": use_hpu_graphs,
-        "max_new_tokens": max_new_tokens,
-        "num_beams": num_beams,
         "ignore_eos": ignore_eos,
-}
+    })
 
 from transformers import AutoModelForCausalLM
 from deepseek_vl.models import MultiModalityCausalLM, VLChatProcessor
@@ -68,22 +72,24 @@ def generate(device, dtype, conversation):
     if use_hpu_graphs:
         from habana_frameworks.torch.hpu import wrap_in_hpu_graph
         vl_gpt.language_model = wrap_in_hpu_graph(vl_gpt.language_model)
-
+        
     vl_gpt = vl_gpt.to(device, dtype=dtype).eval()
 
     # load images and prepare for inputs
     pil_images = load_pil_images(conversation)
     prepare_inputs = vl_chat_processor(
         conversations=conversation, images=pil_images, force_batchify=True
-    ).to(device, dtype=dtype)
+    ).to(device, torch.float)
 
     # run image encoder to get the image embeddings
     inputs_embeds = vl_gpt.prepare_inputs_embeds(**prepare_inputs)
     print("run generation", generation_kwargs)
 
+    print(vl_gpt.language_model.device)
+
     # run the model to get the response
     outputs_accelerator = vl_gpt.language_model.generate(
-        inputs_embeds=inputs_embeds,
+        inputs_embeds=inputs_embeds.to(torch.bfloat16),
         attention_mask=prepare_inputs.attention_mask,
         pad_token_id=tokenizer.eos_token_id,
         bos_token_id=tokenizer.bos_token_id,
