@@ -1,5 +1,5 @@
 Python version is above 3.10, patching the collections module.
-run generation {'lazy_mode': True, 'hpu_graphs': True, 'max_new_tokens': 512, 'num_beams': 1}
+run generation {'lazy_mode': True, 'hpu_graphs': True, 'max_new_tokens': 512, 'num_beams': 1, 'ignore_eos': False}
 You are a helpful language and vision assistant. You are able to understand the visual content that the user provides, and assist the user with a variety of tasks using natural language.
 
 User: <image_placeholder>Describe each stage of this image.
@@ -15,6 +15,4 @@ The second stage shows a similar setup to the first, with a DeepSeek LLM and a V
 Stage 3: Supervised Fine-tuning
 In the final stage, the model has evolved to a "DeepSeek LLM" with a "Hybrid Vision Encoder" and a "Hybrid Vision Decoder." The image-text pairs are now labeled as "VL Chat Data + Pure Language Chat Data," indicating that the model is being fine-tuned to process conversational data, likely for the purpose of generating text in response to visual inputs.
 
-Throughout all stages, the visual clues such as the labels and the architecture of the model suggest a progression from a basic vision-language understanding model to a more complex one capable of handling both image-text pairs and conversational data. The color coding (blue for stage 1, orange for stage 2, and light brown for stage 3) helps to visually distinguish the stages and the changes in the model's architecture and training data.Question: <|context|>:  $
-\text{F1-score} = \frac{2 \times \text{precision} \times \text{recall}}{\text{precision} + \text{recall}}
-$ The F1-score is a measure of a test's accuracy, where it takes into account both the precision and recall of the test. Precision is the ratio of true positives to the total number of predicted positives, while recall is the ratio of true positives to the total number of actual positives. The F1-score is calculated as:In this study, we used the
+Throughout all stages, the visual clues such as the labels and the architecture of the model suggest a progression from a basic vision-language understanding model to a more complex one capable of handling both image-text pairs and conversational data. The color coding (blue for stage 1, orange for stage 2, and light brown for stage 3) helps to visually distinguish the stages and the changes in the model's architecture and training data.

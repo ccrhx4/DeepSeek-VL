@@ -19,7 +19,7 @@
 import habana_frameworks.torch
 import torch
 
-dtype = torch.float32
+dtype = torch.float
 device = "hpu"
 use_hpu_graphs = True
 max_new_tokens = 512
@@ -35,6 +35,7 @@ generation_kwargs = {
         "hpu_graphs": use_hpu_graphs,
         "max_new_tokens": max_new_tokens,
         "num_beams": num_beams,
+        "ignore_eos": ignore_eos,
 }
 
 from transformers import AutoModelForCausalLM
