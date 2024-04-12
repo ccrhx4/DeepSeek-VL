@@ -18,6 +18,7 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 import habana_frameworks.torch
 import torch
+import time
 
 dtype = torch.bfloat16
 device = "hpu"
@@ -56,50 +57,76 @@ conversation = [
     {"role": "Assistant", "content": ""},
     ]
 
-def generate(device, dtype, conversation):
+def prepare_model(device, dtype):
     # specify the path to the model
     model_path = "deepseek-ai/deepseek-vl-7b-chat"
+    start_load_chat_processor = time.time()
     vl_chat_processor: VLChatProcessor = VLChatProcessor.from_pretrained(model_path)
     tokenizer = vl_chat_processor.tokenizer
+    print(f"load chat processor took {time.time() - start_load_chat_processor:.2f} seconds")
 
     if device == "hpu":
         import habana_frameworks.torch.core as htcore
 
+    start_load_model = time.time()
     vl_gpt: MultiModalityCausalLM = AutoModelForCausalLM.from_pretrained(
         model_path, trust_remote_code=True
     )
+    
 
     if use_hpu_graphs:
         from habana_frameworks.torch.hpu import wrap_in_hpu_graph
         vl_gpt.language_model = wrap_in_hpu_graph(vl_gpt.language_model)
-        
+
     vl_gpt = vl_gpt.to(device, dtype=dtype).eval()
+    print(f"load model took {time.time() - start_load_model:.2f} seconds")
 
     # load images and prepare for inputs
+    start_load_image = time.time()
     pil_images = load_pil_images(conversation)
     prepare_inputs = vl_chat_processor(
         conversations=conversation, images=pil_images, force_batchify=True
     ).to(device, torch.float)
-
+    print(f"load images took {time.time() - start_load_image:.2f} seconds")
+    
     # run image encoder to get the image embeddings
+    start_prepare_inputs = time.time()
     inputs_embeds = vl_gpt.prepare_inputs_embeds(**prepare_inputs)
-    print("run generation", generation_kwargs)
+    print(f"prepare inputs took {time.time() - start_prepare_inputs:.2f} seconds")
+    return vl_gpt, prepare_inputs, inputs_embeds, tokenizer
 
+def generate(vl_gpt, prepare_inputs, inputs_embeds, tokenizer, max_new_tokens):
+    print("run generation")
     print(vl_gpt.language_model.device)
+    generation_kwargs = dict(do_sample=False, 
+            #num_beams=4, 
+            #use_cache=True, 
+            max_new_tokens=max_new_tokens,
+            lazy_mode=True,
+            hpu_graphs=use_hpu_graphs,
+    )
 
+    start_generation = time.time()
     # run the model to get the response
     outputs_accelerator = vl_gpt.language_model.generate(
-        inputs_embeds=inputs_embeds.to(torch.bfloat16),
+        inputs_embeds=inputs_embeds,
         attention_mask=prepare_inputs.attention_mask,
         pad_token_id=tokenizer.eos_token_id,
         bos_token_id=tokenizer.bos_token_id,
         eos_token_id=tokenizer.eos_token_id,
+        #max_new_tokens=16,
         **generation_kwargs,
     )
+    duration = time.time() - start_generation
+    print(f"generation took {duration:.2f} seconds")
 
-    
     answer = tokenizer.decode(outputs_accelerator[0].cpu().tolist(), skip_special_tokens=True)
     print(f"{prepare_inputs['sft_format'][0]}", answer)
     return inputs_embeds, outputs_accelerator
 
-embeds_gpu, output_gpu = generate(device, dtype, conversation)
+if __name__ == "__main__":
+    vl_gpt, prepare_inputs, inputs_embeds, tokenizer = prepare_model(device, dtype)
+    max_tokens_list = [8, 16, 32, 64, 128, 256]
+    for max_tokens in max_tokens_list:
+        print(f"Running inference with max_new_tokens={max_tokens}")
+        inputs_embeds_gpu, output_gpu = generate(vl_gpt, prepare_inputs, inputs_embeds, tokenizer, max_tokens)
