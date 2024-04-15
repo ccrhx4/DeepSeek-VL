@@ -176,12 +176,8 @@ class HybridVisionTower(nn.Module):
         high_images = images
 
         # [bs, c, h_low, w_low]
-        #TODO: with image.dtype=bfloat16, result is not correct
-        #WA: image always with float
         low_images = self.resize(images)
 
-        low_images = low_images.to(torch.bfloat16)
-        high_images = high_images.to(torch.bfloat16)
         # separately run two vision towers
         # run high_res vision tower
         high_res = self.vision_tower_high(high_images)
