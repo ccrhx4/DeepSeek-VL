@@ -16,17 +16,15 @@
 # COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-import habana_frameworks.torch
-import torch
 import time
+import torch
 
-dtype = torch.bfloat16
+dtype = torch.float
 device = "hpu"
 use_hpu_graphs = True
 max_new_tokens = 512
 num_beams = 1
 ignore_eos = False
-
 
 generation_kwargs = {
     "max_new_tokens": max_new_tokens,
@@ -35,6 +33,7 @@ generation_kwargs = {
 
 if device == "hpu":
     from optimum.habana.transformers.modeling_utils import adapt_transformers_to_gaudi
+    import habana_frameworks.torch
     adapt_transformers_to_gaudi()
 
     generation_kwargs.update({
@@ -42,6 +41,8 @@ if device == "hpu":
         "hpu_graphs": use_hpu_graphs,
         "ignore_eos": ignore_eos,
     })
+else:
+    use_hpu_graphs = False
 
 from transformers import AutoModelForCausalLM
 from deepseek_vl.models import MultiModalityCausalLM, VLChatProcessor
@@ -72,7 +73,6 @@ def prepare_model(device, dtype):
     vl_gpt: MultiModalityCausalLM = AutoModelForCausalLM.from_pretrained(
         model_path, trust_remote_code=True
     )
-    
 
     if use_hpu_graphs:
         from habana_frameworks.torch.hpu import wrap_in_hpu_graph
@@ -84,49 +84,41 @@ def prepare_model(device, dtype):
     # load images and prepare for inputs
     start_load_image = time.time()
     pil_images = load_pil_images(conversation)
-    prepare_inputs = vl_chat_processor(
+    inputs = vl_chat_processor(
         conversations=conversation, images=pil_images, force_batchify=True
-    ).to(device, torch.float)
+    ).to(device, dtype=dtype)
     print(f"load images took {time.time() - start_load_image:.2f} seconds")
     
+    return vl_gpt, tokenizer, inputs
+
+def generate(vl_gpt, tokenizer, inputs, max_new_tokens):
+    generation_kwargs.update({"max_new_tokens": max_new_tokens})
+
     # run image encoder to get the image embeddings
     start_prepare_inputs = time.time()
-    inputs_embeds = vl_gpt.prepare_inputs_embeds(**prepare_inputs)
-    print(f"prepare inputs took {time.time() - start_prepare_inputs:.2f} seconds")
-    return vl_gpt, prepare_inputs, inputs_embeds, tokenizer
-
-def generate(vl_gpt, prepare_inputs, inputs_embeds, tokenizer, max_new_tokens):
-    print("run generation")
-    print(vl_gpt.language_model.device)
-    generation_kwargs = dict(do_sample=False, 
-            #num_beams=4, 
-            #use_cache=True, 
-            max_new_tokens=max_new_tokens,
-            lazy_mode=True,
-            hpu_graphs=use_hpu_graphs,
-    )
-
+    inputs_embeds = vl_gpt.prepare_inputs_embeds(**inputs)
+    print(f"vision encoder took {time.time() - start_prepare_inputs:.2f} seconds")
+    
     start_generation = time.time()
     # run the model to get the response
     outputs_accelerator = vl_gpt.language_model.generate(
         inputs_embeds=inputs_embeds,
-        attention_mask=prepare_inputs.attention_mask,
+        attention_mask=inputs.attention_mask,
         pad_token_id=tokenizer.eos_token_id,
         bos_token_id=tokenizer.bos_token_id,
         eos_token_id=tokenizer.eos_token_id,
-        #max_new_tokens=16,
         **generation_kwargs,
     )
     duration = time.time() - start_generation
     print(f"generation took {duration:.2f} seconds")
 
     answer = tokenizer.decode(outputs_accelerator[0].cpu().tolist(), skip_special_tokens=True)
-    print(f"{prepare_inputs['sft_format'][0]}", answer)
+    print(f"{inputs['sft_format'][0]}", answer)
     return inputs_embeds, outputs_accelerator
 
 if __name__ == "__main__":
-    vl_gpt, prepare_inputs, inputs_embeds, tokenizer = prepare_model(device, dtype)
-    max_tokens_list = [8, 16, 32, 64, 128, 256]
+    vl_gpt, tokenizer, inputs = prepare_model(device, dtype)
+    max_tokens_list = [32, 64, 128, 256, 512]
     for max_tokens in max_tokens_list:
         print(f"Running inference with max_new_tokens={max_tokens}")
-        inputs_embeds_gpu, output_gpu = generate(vl_gpt, prepare_inputs, inputs_embeds, tokenizer, max_tokens)
+        inputs_embeds_gpu, output_gpu = generate(vl_gpt, tokenizer, inputs, max_tokens)
