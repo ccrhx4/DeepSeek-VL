@@ -19,7 +19,7 @@
 import time
 import torch
 
-dtype = torch.float
+dtype = torch.bfloat16
 device = "hpu"
 use_hpu_graphs = True
 max_new_tokens = 512
@@ -118,7 +118,7 @@ def generate(vl_gpt, tokenizer, inputs, max_new_tokens):
 
 if __name__ == "__main__":
     vl_gpt, tokenizer, inputs = prepare_model(device, dtype)
-    max_tokens_list = [32, 64, 128, 256, 512]
+    max_tokens_list = [512]
     for max_tokens in max_tokens_list:
         print(f"Running inference with max_new_tokens={max_tokens}")
         inputs_embeds_gpu, output_gpu = generate(vl_gpt, tokenizer, inputs, max_tokens)
