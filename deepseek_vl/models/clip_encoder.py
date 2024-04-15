@@ -161,7 +161,8 @@ class HybridVisionTower(nn.Module):
             self.vision_tower_low = self.vision_tower_low.eval()
 
         import torchvision.transforms as T
-        self.resize = T.Resize(self.low_res_size, interpolation=T.InterpolationMode.BICUBIC, antialias=True)
+        #self.resize = T.Resize(self.low_res_size, interpolation=T.InterpolationMode.BICUBIC, antialias=True)
+        self.resize = T.Resize(self.low_res_size, antialias=True)
 
     def forward(self, images: torch.Tensor):
         """
@@ -181,8 +182,7 @@ class HybridVisionTower(nn.Module):
         #WA: image always with float
         print(images.dtype)
         low_images = self.resize(images)
-        from torchvision.utils import save_image
-        save_image(low_images, str(low_images.device) + "." + str(low_images.dtype) + ".jpeg")
+        torch.save(low_images, str(low_images.device) + "." + str(low_images.dtype) + ".pt")
 
         low_images = low_images.to(torch.bfloat16)
         high_images = high_images.to(torch.bfloat16)
