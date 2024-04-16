@@ -19,8 +19,8 @@
 import time
 import torch
 
-dtype = torch.float
-device = "cuda"
+dtype = torch.bfloat16
+device = "hpu"
 use_hpu_graphs = True
 max_new_tokens = 512
 num_beams = 1
